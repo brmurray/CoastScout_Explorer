@@ -1,7 +1,14 @@
 """
-Created on Mon May 18 11:45:03 2020
+CoastScout Explorer
 
-@author: bryan
+Python tools for playing with CoastScout buoy data
+Focus on buoy-buoy comparsion with CDIP 201 "Scripps Nearshore" off La Jolla, CA
+
+Contact: Bryan Murray, brmurray@mailbox.org
+
+Change Log:
+    + 8/28/2020: First commit
+
 """
 
 
@@ -131,8 +138,6 @@ pHs.grid(b=True, which='major', color='dimgrey', linestyle='--')
 # Set title
 plt.suptitle('CDIP201 vs CoastScout, with times of interest',fontsize=22)
 
-#
-
 # March 18 Storm
 plt.axvline(x=datetime.datetime(2020,3,18,18,0,0),c='r',zorder=1)
 plt.axvline(x=datetime.datetime(2020,3,18,22,0,0),c='r',zorder=1)
@@ -145,53 +150,33 @@ plt.axvline(x=datetime.datetime(2020,5,16,17,0,0),c='m',zorder=1)
 #%% Time Series Compendium
 f, (pHs,pTp,pDp) = plt.subplots(3,1,sharex=True,figsize=(15,10),num='CDIP201 vs CoastScout, Feb-Aug 2020')
 
+# Set title
+plt.suptitle('CDIP201 vs CoastScout, Feb-Aug 2020',fontsize=22)
+
 # Create 3 stacked subplots for three parameters: (Hs,Tp,Dp)
 pHs.plot(df.dt,df.Hs,'b-')
 pHs.plot(df.dt,df.wave_significant_height_m,'g-')
-#pHs.plot(sws2.dt,sws2.Hs,'m*')
 pHs.legend(['CDIP201','Scripps02'],fontsize=14,loc='upper right')
 pHs.set_ylabel('Hs, m',fontsize=18)
 pHs.set_ylim(0,3)
 pHs.set_yticks([0,1.,2.,3.])
+pHs.grid(b=True, which='major', color='dimgrey', linestyle='--')
 
 pTp.plot(df.dt,df.Tp,'b-')
 pTp.plot(df.dt,df.wave_peak_period_seconds,'g-')
-#pTp.plot(sws2.dt,sws2.Tp,'m*')
 pTp.legend(['CDIP201','Scripps02'],fontsize=14,loc='upper right')
 pTp.set_ylabel('Tp, sec',fontsize=18)
 pTp.set_ylim(2,22)
 pTp.set_yticks([4,8,12,16,20])
-
+pTp.grid(b=True, which='major', color='dimgrey', linestyle='--')
 
 pDp.plot(df.dt,df.Dp,'b-')
 pDp.plot(df.dt,df.wave_mean_direction_degrees,'g-')
-#pDp.plot(sws2.dt,sws2.Dp,'m*')
 pDp.legend(['CDIP201','Scripps02'],fontsize=14,loc='upper right')
 pDp.set_ylabel('Dp, degrees', fontsize=18) 
 pDp.set_ylim(180,360)
 pDp.set_yticks([180,225,270,315,360])
-
-
-# Set title
-plt.suptitle('CDIP201 vs CoastScout, Feb-Aug 2020',fontsize=22)
-
-# # Set tick parameters
-# pHs.set_xticklabels(['1','6','11','16','21','26','31']) 
-# pHs.tick_params(axis='y', which='major', labelsize=12, right='off')
-# pHs.tick_params(axis='x', which='major', labelsize=12, top='off')
-
-# # Set x-axis tick interval to every 5 days
-# days = DayLocator(interval=5) 
-# daysFmt = DateFormatter('%d')
-# plt.gca().xaxis.set_major_locator(days)
-# plt.gca().xaxis.set_major_formatter(daysFmt)
-
-
-# Plot dashed gridlines
-pHs.grid(b=True, which='major', color='dimgrey', linestyle='--')
-pTp.grid(b=True, which='major', color='dimgrey', linestyle='--')
 pDp.grid(b=True, which='major', color='dimgrey', linestyle='--')
-
 
 
 #%% Comparison Compendium
