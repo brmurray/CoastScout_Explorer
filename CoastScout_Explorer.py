@@ -67,10 +67,10 @@ url = r'http://thredds.cdip.ucsd.edu/thredds/fileServer/cdip/realtime/' + stn + 
 
 #%%
 # Open local copy of netCDF archive file
-p2archivefile = r'G:\My Drive\00_CalWave\01_CW_Demo\03_Demo_Test_Site\00_Scripps\00_MetOcean_Data\CDIP201_ScrippsNearshore\Archive_dump\CDIP201_feb-may2020.nc'
-ds = netCDF4.Dataset(p2archivefile)
-#p2CDIP201_rt = r'G:\My Drive\00_CalWave\01_CW_Demo\03_Demo_Test_Site\00_Scripps\00_MetOcean_Data\CDIP201_ScrippsNearshore\Archive_dump\CDIP201_feb-may2020.nc'
-#ds = netCDF4.Dataset(p2CDIP201_rt)
+#p2archivefile = r'G:\My Drive\00_CalWave\01_CW_Demo\03_Demo_Test_Site\00_Scripps\00_MetOcean_Data\CDIP201_ScrippsNearshore\Archive_dump\CDIP201_feb-may2020.nc'
+#ds = netCDF4.Dataset(p2archivefile)
+p2CDIP201_rt = r'G:\My Drive\00_CalWave\01_CW_Demo\03_Demo_Test_Site\00_Scripps\00_MetOcean_Data\CDIP201_ScrippsNearshore\Archive_dump\201p1_rt_200831.nc'
+ds = netCDF4.Dataset(p2CDIP201_rt)
 ds.set_always_mask(False)
 
 # Create pandas DataFrame for these guys
@@ -102,17 +102,62 @@ ns.thh= ns.thh.apply(lambda ti: ti - (ti%1800))
 #ns['dt'] = ns.thh.apply(unix2datetime)
 ns = ns.set_index('thh')
 
-
-
-#%%
+#
 df = pd.merge(ns,cs,left_index=False,right_index=True,how='inner',on=['thh','thh']) #<-- returns empty
 df.dropna(inplace=True)
 df['dt'] = df.tepoch.apply(lambda thh: datetime.datetime.fromtimestamp(thh))
 #common = ns.index.intersection(cs.index)
 #cs.thh[cs.thh.isin(ns.thh)]
 
+
+#%%
+from dataclasses import dataclass
+
+@dataclass
+class Wavestate:
+    name: str
+    Tp: float
+    Te: float
+    Hs: float
+    Dp: float
+    
+iws1 = Wavestate('IWS1',3.26,2.6,0.468,10)
+iws2 = Wavestate('IWS2',4.40,3.51,0.528,0)
+iws3 = Wavestate('IWS3',5.16,4.12,1.072,-70)
+iws4 = Wavestate('IWS4',5.68,4.54,0.412,-10)
+iws5 = Wavestate('IWS5',6.82,5.45,1.168,0)
+iws6 = Wavestate('IWS6',7.38,5.90,0.652,0)
+
+
+#%% Identify interesting times
 # Identify SWS2 times
 sws2 = df[(df.Hs>1.3) & (df.Hs<1.4) & (df.Tp>7.5) & (df.Tp<8.5)]
+
+# PacWave Bulleye
+pac = df[(df.Hs>.65) & (df.Hs<.85) & (df.Tp>5.25) & (df.Tp<5.75)]
+
+# Bin times according to IWS cases
+# IEC requires Tp bins <1.165 second, and Hs bins < 0.5m
+# However, we'll scale that critera by 1:5ish...so Hs bins of 0.2m and Tp bins of 0.5s
+# note: IWS2 (caps) is a view into df; iwsx (lowercase) is a dataclass (Wavestate) instance
+hw = 0.2/2
+tw = 0.5/2
+IWS1 = df[(df.Hs>iws1.Hs-hw) & (df.Hs<iws1.Hs+hw) & (df.Tp>iws1.Tp-tw) & (df.Tp<iws1.Tp+tw)] 
+IWS2 = df[(df.Hs>iws2.Hs-hw) & (df.Hs<iws2.Hs+hw) & (df.Tp>iws2.Tp-tw) & (df.Tp<iws2.Tp+tw)] 
+IWS3 = df[(df.Hs>iws3.Hs-hw) & (df.Hs<iws3.Hs+hw) & (df.Tp>iws3.Tp-tw) & (df.Tp<iws3.Tp+tw)] 
+IWS4 = df[(df.Hs>iws4.Hs-hw) & (df.Hs<iws4.Hs+hw) & (df.Tp>iws4.Tp-tw) & (df.Tp<iws4.Tp+tw)] 
+IWS5 = df[(df.Hs>iws5.Hs-hw) & (df.Hs<iws5.Hs+hw) & (df.Tp>iws5.Tp-tw) & (df.Tp<iws5.Tp+tw)] 
+IWS6 = df[(df.Hs>iws6.Hs-hw) & (df.Hs<iws6.Hs+hw) & (df.Tp>iws6.Tp-tw) & (df.Tp<iws6.Tp+tw)] 
+
+# IEC requires >20 mins of record to "count" as a sea state. 
+# We can just use the raw counts (Nrows) to estimate number of periods in Feb-Aug
+wavestates = [iws1,iws2,iws3,iws4,iws5,iws6]
+for i,ws in enumerate(wavestates):
+    count = len(df[(df.Hs>ws.Hs-hw) & (df.Hs<ws.Hs+hw) & (df.Tp>ws.Tp-tw) & (df.Tp<ws.Tp+tw)] )
+    print(ws.name, count)
+
+
+
 
 #%% Plot Tp time series
 fig=plt.figure()
@@ -126,8 +171,13 @@ ax1.legend([r'CDIP201',r'CoastScout2',r'CS2 - 8hr',r'CS2 + 8hr'])
 #%% Plot Hs time series
 fig=plt.figure()
 pHs=fig.add_subplot(111)
-pHs.plot(df.dt,df.Hs,'b-',zorder=2)
-pHs.plot(df.dt,df.wave_significant_height_m,'g-',zorder=3)
+
+start_date = datetime.datetime(2020,3,18,18,0,0)
+end_date = datetime.datetime(2020,3,20,18,0,0)
+mask = (df.dt>start_date) & (df.dt<end_date)
+
+pHs.plot(df.dt.loc[mask],df.Hs.loc[mask],'b-',zorder=2)
+#pHs.plot(df.dt,df.wave_significant_height_m,'g-',zorder=3)
 pHs.legend([r'CDIP201',r'CoastScout2'])
 pHs.set_ylabel('Hs, m',fontsize=18)
 pHs.set_ylim(0,3)
@@ -142,9 +192,9 @@ plt.suptitle('CDIP201 vs CoastScout, with times of interest',fontsize=22)
 plt.axvline(x=datetime.datetime(2020,3,18,18,0,0),c='r',zorder=1)
 plt.axvline(x=datetime.datetime(2020,3,18,22,0,0),c='r',zorder=1)
 
-# May 16 SWS2
-plt.axvline(x=datetime.datetime(2020,5,16,14,0,0),c='m',zorder=1)
-plt.axvline(x=datetime.datetime(2020,5,16,17,0,0),c='m',zorder=1)
+# March 25 SWS2
+plt.axvline(x=datetime.datetime(2020,3,25,5,0,0),c='m',zorder=1)
+plt.axvline(x=datetime.datetime(2020,3,25,17,0,0),c='m',zorder=1)
 
 
 #%% Time Series Compendium
@@ -177,6 +227,8 @@ pDp.set_ylabel('Dp, degrees', fontsize=18)
 pDp.set_ylim(180,360)
 pDp.set_yticks([180,225,270,315,360])
 pDp.grid(b=True, which='major', color='dimgrey', linestyle='--')
+
+
 
 
 #%% Comparison Compendium
