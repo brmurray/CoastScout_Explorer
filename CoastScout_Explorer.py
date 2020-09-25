@@ -61,16 +61,16 @@ dst = dstfolder + r'\\' + dstfile
 # Retreive the file
 import urllib.request
 #url = r'http://thredds.cdip.ucsd.edu/thredds/fileServer/cdip/archive/' + stn + r'/' + stn + 'p1_historic.nc'
-url = r'http://thredds.cdip.ucsd.edu/thredds/fileServer/cdip/realtime/' + stn + 'p1_rt.nc'
+#url = r'http://thredds.cdip.ucsd.edu/thredds/fileServer/cdip/realtime/' + stn + 'p1_rt.nc'
 #urllib.request.urlretrieve(url, dst)
 
 
 #%%
 # Open local copy of netCDF archive file
-#p2archivefile = r'G:\My Drive\00_CalWave\01_CW_Demo\03_Demo_Test_Site\00_Scripps\00_MetOcean_Data\CDIP201_ScrippsNearshore\Archive_dump\CDIP201_feb-may2020.nc'
-#ds = netCDF4.Dataset(p2archivefile)
-p2CDIP201_rt = r'G:\My Drive\00_CalWave\01_CW_Demo\03_Demo_Test_Site\00_Scripps\00_MetOcean_Data\CDIP201_ScrippsNearshore\Archive_dump\201p1_rt_200831.nc'
-ds = netCDF4.Dataset(p2CDIP201_rt)
+p2archivefile = r'G:\My Drive\00_CalWave\01_CW_Demo\03_Demo_Test_Site\00_Scripps\00_MetOcean_Data\CDIP201_ScrippsNearshore\Archive_dump\CDIP201_feb-aug2020.nc'
+ds = netCDF4.Dataset(p2archivefile)
+#p2CDIP201_rt = r'G:\My Drive\00_CalWave\01_CW_Demo\03_Demo_Test_Site\00_Scripps\00_MetOcean_Data\CDIP201_ScrippsNearshore\Archive_dump\201p1_rt_200831.nc'
+#ds = netCDF4.Dataset(p2CDIP201_rt)
 ds.set_always_mask(False)
 
 # Create pandas DataFrame for these guys
@@ -139,7 +139,7 @@ pac = df[(df.Hs>.65) & (df.Hs<.85) & (df.Tp>5.25) & (df.Tp<5.75)]
 # Bin times according to IWS cases
 # IEC requires Tp bins <1.165 second, and Hs bins < 0.5m
 # However, we'll scale that critera by 1:5ish...so Hs bins of 0.2m and Tp bins of 0.5s
-# note: IWS2 (caps) is a view into df; iwsx (lowercase) is a dataclass (Wavestate) instance
+# note: IWSX (caps) is a view into df; iwsx (lowercase) is a dataclass (Wavestate) instance
 hw = 0.2/2
 tw = 0.5/2
 IWS1 = df[(df.Hs>iws1.Hs-hw) & (df.Hs<iws1.Hs+hw) & (df.Tp>iws1.Tp-tw) & (df.Tp<iws1.Tp+tw)] 
